@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- 搜尋標題 -->
+    <div class="mb-8">
+        {% if query %}
+        <h1 class="text-3xl font-bold text-gray-900">🔍 搜尋結果</h1>
+        <p class="mt-2 text-gray-600">搜尋關鍵字：「{{ query }}」</p>
+        {% else %}
+        <h1 class="text-3xl font-bold text-gray-900">🔍 搜尋</h1>
+        <p class="mt-2 text-gray-600">搜尋電影、使用者或評論內容</p>
+        {% endif %}
+    </div>
+
+    <!-- 搜尋表單 -->
+    <div class="bg-gray-50 rounded-lg p-6 mb-8">
+        <form method="GET" action="{{ url_for('main.search') }}">
+            <div class="flex gap-4">
+                <input type="text" 
+                       name="q" 
+                       value="{{ query }}"
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                       placeholder="輸入電影名稱、使用者名稱或評論內容...">
+                <button type="submit" 
+                        class="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    🔍 搜尋
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if query %}
+    <!-- 搜尋結果 -->
+    <div class="space-y-8">
+        <!-- 電影結果 -->
+        {% if movies %}
+        <section>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">🎬 電影 ({{ movies|length }})</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {% for movie in movies %}
+                <div class="group cursor-pointer">
+                    <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id) }}">
+                        <div class="aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden group-hover:shadow-lg transition-shadow">
+                            {% if movie.poster_url %}
+                            <img src="{{ movie.poster_url }}" 
+                                 alt="{{ movie.title }}" 
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            {% else %}
+                            <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+                                <span class="text-gray-500 text-4xl">🎬</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-4">
+                            <h3 class="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2">
+                                {{ movie.title }}
+                            </h3>
+                            <div class="flex items-center justify-between mt-2">
+                                <span class="text-sm text-gray-500">{{ movie.release_year or '' }}</span>
+                                <div class="flex items-center text-sm">
+                                    {% if movie.avg_rating > 0 %}
+                                        <span class="text-yellow-400 mr-1">★</span>
+                                        <span class="font-medium">{{ "%.1f"|format(movie.avg_rating) }}</span>
+                                    {% else %}
+                                        <span class="text-gray-400">無評分</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- 使用者結果 -->
+        {% if users %}
+        <section>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">👥 使用者 ({{ users|length }})</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for user in users %}
+                <div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                            <span class="text-primary-600 font-semibold text-lg">
+                                {{ user.display_name[0].upper() }}
+                            </span>
+                        </div>
+                        <div class="flex-1">
+                            <a href="{{ url_for('main.user_profile', user_id=user.user_id) }}" 
+                               class="font-semibold text-gray-900 hover:text-primary-600">
+                                {{ user.display_name }}
+                            </a>
+                            <p class="text-sm text-gray-500">
+                                {{ user.get_review_count() }} 則評論
+                            </p>
+                            <p class="text-xs text-gray-400">
+                                加入於 {{ user.created_at.strftime('%Y年%m月') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- 評論結果 -->
+        {% if reviews %}
+        <section>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">💬 評論 ({{ reviews|length }})</h2>
+            <div class="space-y-4">
+                {% for review in reviews %}
+                <div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <a href="{{ url_for('main.user_profile', user_id=review.user.user_id) }}" 
+                               class="font-medium text-gray-900 hover:text-primary-600">
+                                {{ review.user.display_name }}
+                            </a>
+                            <div class="flex text-yellow-400 text-sm">
+                                {% for i in range(1, 6) %}
+                                <span class="{% if i <= review.rating %}text-yellow-400{% else %}text-gray-300{% endif %}">★</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-500">{{ review.created_at.strftime('%Y年%m月%d日') }}</span>
+                    </div>
+                    
+                    <a href="{{ url_for('main.movie_detail', movie_id=review.movie.movie_id) }}" 
+                       class="font-medium text-primary-600 hover:text-primary-700 mb-2 block">
+                        {{ review.movie.title }}
+                    </a>
+                    
+                    {% if review.comment_text %}
+                    <p class="text-gray-700 line-clamp-3">{{ review.comment_text }}</p>
+                    {% else %}
+                    <p class="text-gray-500 italic">使用者僅給予評分，未留下評論。</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- 無搜尋結果 -->
+        {% if not movies and not users and not reviews %}
+        <div class="text-center py-12">
+            <div class="text-6xl mb-4">🔍</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">找不到相關結果</h3>
+            <p class="text-gray-500 mb-6">試試使用不同的關鍵字搜尋</p>
+            <div class="space-x-4">
+                <a href="{{ url_for('main.movies') }}" 
+                   class="inline-block px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
+                    瀏覽所有電影
+                </a>
+                <a href="{{ url_for('main.index') }}" 
+                   class="inline-block px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+                    返回首頁
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <!-- 搜尋提示 -->
+    <div class="text-center py-12">
+        <div class="text-6xl mb-4">🎯</div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">開始搜尋</h3>
+        <p class="text-gray-500 mb-6">輸入關鍵字來搜尋電影、使用者或評論</p>
+        <div class="space-x-4">
+            <a href="{{ url_for('main.movies') }}" 
+               class="inline-block px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
+                瀏覽電影
+            </a>
+            <a href="{{ url_for('main.ranking') }}" 
+               class="inline-block px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+                查看排行榜
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

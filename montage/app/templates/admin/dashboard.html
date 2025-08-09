@@ -1,0 +1,179 @@
+{% extends 'admin/master.html' %}
+
+{% block head_css %}
+{{ super() }}
+<style>
+    .dashboard-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-stat {
+        text-align: center;
+        padding: 15px;
+    }
+    
+    .dashboard-stat .number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .dashboard-stat .label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+    
+    .recent-item {
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+    }
+    
+    .recent-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4">📊 系統概覽</h1>
+    
+    <!-- 統計卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <div class="dashboard-stat">
+                    <div class="number">{{ total_users }}</div>
+                    <div class="label">👥 總使用者數</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <div class="dashboard-stat">
+                    <div class="number">{{ total_movies }}</div>
+                    <div class="label">🎬 總電影數</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <div class="dashboard-stat">
+                    <div class="number">{{ total_reviews }}</div>
+                    <div class="label">💬 總評論數</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <div class="dashboard-stat">
+                    <div class="number">{{ "%.1f"|format(total_reviews / total_movies if total_movies > 0 else 0) }}</div>
+                    <div class="label">📈 平均評論/電影</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- 最新使用者 -->
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <h5 class="card-title">🆕 最新註冊使用者</h5>
+                {% if recent_users %}
+                    {% for user in recent_users %}
+                    <div class="recent-item">
+                        <strong>{{ user.display_name }}</strong>
+                        <br>
+                        <small class="text-muted">{{ user.email }}</small>
+                        <br>
+                        <small class="text-muted">{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">尚無使用者</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 最新評論 -->
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <h5 class="card-title">💬 最新評論</h5>
+                {% if recent_reviews %}
+                    {% for review in recent_reviews %}
+                    <div class="recent-item">
+                        <strong>{{ review.user.display_name }}</strong>
+                        <span class="text-warning">
+                            {% for i in range(review.rating) %}★{% endfor %}
+                            {% for i in range(5 - review.rating) %}☆{% endfor %}
+                        </span>
+                        <br>
+                        <small>{{ review.movie.title }}</small>
+                        <br>
+                        {% if review.comment_text %}
+                        <small class="text-muted">{{ review.comment_text[:50] }}{% if review.comment_text|length > 50 %}...{% endif %}</small>
+                        <br>
+                        {% endif %}
+                        <small class="text-muted">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">尚無評論</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 熱門電影 -->
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <h5 class="card-title">🔥 熱門電影</h5>
+                {% if popular_movies %}
+                    {% for movie in popular_movies %}
+                    <div class="recent-item">
+                        <strong>{{ movie.title }}</strong>
+                        {% if movie.release_year %}
+                        <span class="badge badge-secondary">{{ movie.release_year }}</span>
+                        {% endif %}
+                        <br>
+                        <small class="text-warning">
+                            ⭐ {{ "%.1f"|format(movie.avg_rating) }} 
+                            ({{ movie.get_review_count() }} 評論)
+                        </small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">尚無電影</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 快速操作 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="dashboard-card">
+                <h5 class="card-title">⚡ 快速操作</h5>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('movie.create_view') }}" class="btn btn-primary">
+                        🎬 新增電影
+                    </a>
+                    <a href="{{ url_for('user.index_view') }}" class="btn btn-secondary">
+                        👥 管理使用者
+                    </a>
+                    <a href="{{ url_for('review.index_view') }}" class="btn btn-success">
+                        💬 管理評論
+                    </a>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-info" target="_blank">
+                        🏠 前往網站
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Carousel -->
+{% if hero_movies %}
+<section class="relative bg-gray-900 overflow-hidden">
+    <div class="relative h-96 sm:h-[32rem] lg:h-[40rem]">
+        <div id="carousel-container" class="relative h-full">
+            {% for movie in hero_movies %}
+            <div class="carousel-slide {% if loop.first %}active{% endif %} absolute inset-0 transition-opacity duration-1000 {% if not loop.first %}opacity-0{% endif %}">
+                <div class="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black opacity-60"></div>
+                {% if movie.poster_url %}
+                <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" 
+                     class="w-full h-full object-cover object-center">
+                {% else %}
+                <div class="w-full h-full bg-gray-800 flex items-center justify-center">
+                    <span class="text-white text-6xl">🎬</span>
+                </div>
+                {% endif %}
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="text-center text-white px-4">
+                        <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">{{ movie.title }}</h2>
+                        {% if movie.tagline %}
+                        <p class="text-xl sm:text-2xl mb-6 max-w-3xl mx-auto opacity-90">{{ movie.tagline }}</p>
+                        {% endif %}
+                        <div class="flex items-center justify-center space-x-4 mb-6">
+                            {% if movie.release_year %}
+                            <span class="bg-primary-600 px-3 py-1 rounded-full text-sm font-medium">{{ movie.release_year }}</span>
+                            {% endif %}
+                            <div class="flex items-center">
+                                <span class="text-yellow-400 mr-1">★</span>
+                                <span class="font-medium">{{ "%.1f"|format(movie.avg_rating) }}</span>
+                                <span class="text-gray-300 ml-1">({{ movie.get_review_count() }} 評論)</span>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id) }}" 
+                           class="inline-block bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">
+                            查看詳情
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Carousel Navigation -->
+        {% if hero_movies|length > 1 %}
+        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+            <div class="flex space-x-2">
+                {% for movie in hero_movies %}
+                <button onclick="showSlide({{ loop.index0 }})" 
+                        class="carousel-dot w-3 h-3 rounded-full bg-white bg-opacity-50 hover:bg-opacity-75 transition-all {% if loop.first %}bg-opacity-100{% endif %}">
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- 熱門電影 -->
+    {% if popular_movies %}
+    <section class="mb-16">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-3xl font-bold text-gray-900">🔥 熱門電影</h2>
+            <a href="{{ url_for('main.ranking', tab='popular') }}" 
+               class="text-primary-600 hover:text-primary-700 font-medium">查看更多 →</a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for movie in popular_movies %}
+            <div class="group cursor-pointer">
+                <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id) }}">
+                    <div class="aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden group-hover:shadow-lg transition-shadow">
+                        {% if movie.poster_url %}
+                        <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        {% else %}
+                        <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+                            <span class="text-gray-500 text-4xl">🎬</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mt-4">
+                        <h3 class="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2">
+                            {{ movie.title }}
+                        </h3>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-sm text-gray-500">{{ movie.release_year or '' }}</span>
+                            <div class="flex items-center text-sm">
+                                <span class="text-yellow-400 mr-1">★</span>
+                                <span class="font-medium">{{ "%.1f"|format(movie.avg_rating) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- 高分電影 -->
+    {% if top_rated_movies %}
+    <section class="mb-16">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-3xl font-bold text-gray-900">⭐ 高分電影</h2>
+            <a href="{{ url_for('main.ranking', tab='top_rated') }}" 
+               class="text-primary-600 hover:text-primary-700 font-medium">查看更多 →</a>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for movie in top_rated_movies %}
+            <div class="group cursor-pointer">
+                <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id) }}">
+                    <div class="aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden group-hover:shadow-lg transition-shadow">
+                        {% if movie.poster_url %}
+                        <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        {% else %}
+                        <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+                            <span class="text-gray-500 text-4xl">🎬</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mt-4">
+                        <h3 class="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2">
+                            {{ movie.title }}
+                        </h3>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-sm text-gray-500">{{ movie.release_year or '' }}</span>
+                            <div class="flex items-center text-sm">
+                                <span class="text-yellow-400 mr-1">★</span>
+                                <span class="font-medium">{{ "%.1f"|format(movie.avg_rating) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- 最新電影與最新評論 -->
+    <div class="grid lg:grid-cols-2 gap-12">
+        <!-- 最新電影 -->
+        {% if recent_movies %}
+        <section>
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">🆕 最新電影</h2>
+                <a href="{{ url_for('main.ranking', tab='recent') }}" 
+                   class="text-primary-600 hover:text-primary-700 font-medium">查看更多 →</a>
+            </div>
+            <div class="space-y-4">
+                {% for movie in recent_movies[:6] %}
+                <div class="flex space-x-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex-shrink-0">
+                        <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id) }}">
+                            <div class="w-16 h-24 bg-gray-200 rounded overflow-hidden">
+                                {% if movie.poster_url %}
+                                <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" 
+                                     class="w-full h-full object-cover">
+                                {% else %}
+                                <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+                                    <span class="text-gray-500 text-xl">🎬</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id) }}">
+                            <h3 class="font-semibold text-gray-900 hover:text-primary-600 transition-colors line-clamp-1">
+                                {{ movie.title }}
+                            </h3>
+                        </a>
+                        <div class="flex items-center mt-1 text-sm text-gray-500">
+                            <span>{{ movie.release_year or '' }}</span>
+                            <span class="mx-2">•</span>
+                            <div class="flex items-center">
+                                <span class="text-yellow-400 mr-1">★</span>
+                                <span>{{ "%.1f"|format(movie.avg_rating) }}</span>
+                            </div>
+                        </div>
+                        {% if movie.overview %}
+                        <p class="mt-2 text-sm text-gray-600 line-clamp-2">{{ movie.overview }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- 最新評論 -->
+        {% if latest_reviews %}
+        <section>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">💬 最新評論</h2>
+            <div class="space-y-4">
+                {% for review in latest_reviews %}
+                <div class="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <a href="{{ url_for('main.user_profile', user_id=review.user.user_id) }}" 
+                               class="font-medium text-gray-900 hover:text-primary-600">
+                                {{ review.user.display_name }}
+                            </a>
+                            <div class="flex items-center text-sm">
+                                {% for i in range(1, 6) %}
+                                <span class="{% if i <= review.rating %}text-yellow-400{% else %}text-gray-300{% endif %}">★</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-500">{{ review.created_at.strftime('%m/%d') }}</span>
+                    </div>
+                    <a href="{{ url_for('main.movie_detail', movie_id=review.movie.movie_id) }}" 
+                       class="font-medium text-primary-600 hover:text-primary-700 transition-colors">
+                        {{ review.movie.title }}
+                    </a>
+                    {% if review.comment_text %}
+                    <p class="mt-2 text-gray-700 line-clamp-3">{{ review.comment_text }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 輪播功能
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dots = document.querySelectorAll('.carousel-dot');
+    const totalSlides = slides.length;
+    
+    function showSlide(index) {
+        // 隱藏所有幻燈片
+        slides.forEach(slide => {
+            slide.classList.remove('active');
+            slide.classList.add('opacity-0');
+        });
+        
+        // 重設所有點的狀態
+        dots.forEach(dot => {
+            dot.classList.remove('bg-opacity-100');
+            dot.classList.add('bg-opacity-50');
+        });
+        
+        // 顯示目標幻燈片
+        if (slides[index]) {
+            slides[index].classList.add('active');
+            slides[index].classList.remove('opacity-0');
+        }
+        
+        // 更新對應的點
+        if (dots[index]) {
+            dots[index].classList.add('bg-opacity-100');
+            dots[index].classList.remove('bg-opacity-50');
+        }
+        
+        currentSlide = index;
+    }
+    
+    function nextSlide() {
+        const next = (currentSlide + 1) % totalSlides;
+        showSlide(next);
+    }
+    
+    // 自動播放（桌機版）
+    if (window.innerWidth >= 768 && totalSlides > 1) {
+        let autoPlayInterval = setInterval(nextSlide, 5000);
+        
+        // 懸停時暫停
+        const carousel = document.getElementById('carousel-container');
+        if (carousel) {
+            carousel.addEventListener('mouseenter', () => {
+                clearInterval(autoPlayInterval);
+            });
+            
+            carousel.addEventListener('mouseleave', () => {
+                autoPlayInterval = setInterval(nextSlide, 5000);
+            });
+        }
+    }
+</script>
+{% endblock %}

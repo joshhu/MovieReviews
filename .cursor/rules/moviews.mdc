@@ -1,0 +1,16 @@
+---
+alwaysApply: true
+---
+### 專案識別
+專案名稱：蒙太奇之愛。完整規格請查看 docs/PRD.md。
+
+### 核心守則（不可違反）
+1. 程式碼必用 Python 3.12，符合 PEP 8 與型別註解慣例。  
+2. 架構：Flask Blueprint + SQLAlchemy ORM；資料表遷移交給 Flask-Migrate。  
+3. 密碼必須 bcrypt 雜湊並加鹽（依 OWASP 指南）。  
+4. 資料庫採 SQLite，啟用 WAL，避免拼接 SQL，全部使用參數化查詢。  
+5. 只記錄 ERROR↑ 日誌；`TimedRotatingFileHandler` 每天 00:00 輪替，保留 7 份；敏感資訊不得寫入。  
+6. 前端僅用 Tailwind utility 類（含 Typography / Forms plugin），禁止行內 CSS。  
+7. 禁止加入半星評分、分析追蹤碼、自動化測試或 CI/CD；留待下一版。  
+8. 回覆一律使用繁體中文；遵守 **KISS** 與 **DRY** 原則，避免過度工程。
+9. 在撰寫程式碼時，嚴格遵守docs/PRD.md的規則。

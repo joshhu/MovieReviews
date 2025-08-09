@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white">
+    <!-- 電影詳情主區域 -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 電影基本資訊 -->
+        <div class="grid lg:grid-cols-3 gap-8 mb-12">
+            <!-- 電影海報 -->
+            <div class="lg:col-span-1">
+                <div class="aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden shadow-lg">
+                    {% if movie.poster_url %}
+                    <img src="{{ movie.poster_url }}" 
+                         alt="{{ movie.title }}" 
+                         class="w-full h-full object-cover">
+                    {% else %}
+                    <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+                        <span class="text-gray-500 text-6xl">🎬</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 電影資訊 -->
+            <div class="lg:col-span-2">
+                <div class="space-y-6">
+                    <!-- 標題和評分 -->
+                    <div>
+                        <h1 class="text-4xl font-bold text-gray-900 mb-4">{{ movie.title }}</h1>
+                        
+                        {% if movie.tagline %}
+                        <p class="text-xl text-gray-600 italic mb-4">{{ movie.tagline }}</p>
+                        {% endif %}
+
+                        <!-- 評分區域 -->
+                        <div class="flex items-center space-x-6 mb-6">
+                            <div class="flex items-center">
+                                <div class="flex text-2xl text-yellow-400 mr-3">
+                                    {% for i in range(1, 6) %}
+                                    <span class="{% if i <= movie.avg_rating %}text-yellow-400{% else %}text-gray-300{% endif %}">★</span>
+                                    {% endfor %}
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900">
+                                        {{ "%.1f"|format(movie.avg_rating) if movie.avg_rating > 0 else "尚無評分" }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ total_reviews }} 則評論
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if movie.vote_average %}
+                            <div class="border-l border-gray-300 pl-6">
+                                <div class="text-sm text-gray-500">TMDb 評分</div>
+                                <div class="text-lg font-semibold text-gray-700">
+                                    {{ "%.1f"|format(movie.vote_average) }}/10
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 電影詳情 -->
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-3">
+                            {% if movie.release_year %}
+                            <div class="flex">
+                                <span class="w-20 text-sm font-medium text-gray-500">上映年份</span>
+                                <span class="text-gray-900">{{ movie.release_year }}</span>
+                            </div>
+                            {% endif %}
+
+                            {% if movie.runtime %}
+                            <div class="flex">
+                                <span class="w-20 text-sm font-medium text-gray-500">片長</span>
+                                <span class="text-gray-900">{{ movie.runtime }} 分鐘</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="flex">
+                                <span class="w-20 text-sm font-medium text-gray-500">評論數</span>
+                                <span class="text-gray-900">{{ total_reviews }} 則</span>
+                            </div>
+
+                            <div class="flex">
+                                <span class="w-20 text-sm font-medium text-gray-500">平均評分</span>
+                                <span class="text-gray-900">
+                                    {{ "%.1f"|format(movie.avg_rating) if movie.avg_rating > 0 else "尚無評分" }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 電影簡介 -->
+                    {% if movie.overview %}
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">劇情簡介</h3>
+                        <p class="text-gray-700 leading-relaxed">{{ movie.overview }}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- 評分統計 -->
+                    {% if total_reviews > 0 %}
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">評分分布</h3>
+                        <div class="space-y-2">
+                            {% for rating in range(5, 0, -1) %}
+                            <div class="flex items-center">
+                                <span class="w-12 text-sm text-gray-600">{{ rating }} 星</span>
+                                <div class="flex-1 mx-3 bg-gray-200 rounded-full h-2">
+                                    {% set percentage = (rating_distribution[rating] / total_reviews * 100) if total_reviews > 0 else 0 %}
+                                    <div class="bg-yellow-400 h-2 rounded-full" style="width: {{ percentage }}%"></div>
+                                </div>
+                                <span class="w-12 text-sm text-gray-600 text-right">{{ rating_distribution[rating] }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 評論區域 -->
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- 評論表單 -->
+            {% if current_user.is_authenticated %}
+            <div class="lg:col-span-1">
+                <div class="bg-gray-50 rounded-lg p-6">
+                    {% if user_review %}
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">✏️ 編輯您的評論</h3>
+                    {% else %}
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">✍️ 撰寫評論</h3>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('main.add_review', movie_id=movie.movie_id) }}">
+                        {{ review_form.hidden_tag() }}
+                        
+                        <!-- 評分選擇 -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">您的評分</label>
+                            <div class="flex items-center space-x-1">
+                                {% for i in range(1, 6) %}
+                                <button type="button" 
+                                        onclick="setRating({{ i }})"
+                                        class="text-2xl text-gray-300 hover:text-yellow-400 transition-colors"
+                                        id="star-{{ i }}">
+                                    ★
+                                </button>
+                                {% endfor %}
+                            </div>
+                            {{ review_form.rating() }}
+                        </div>
+
+                        <!-- 評論內容 -->
+                        <div class="mb-4">
+                            {{ review_form.comment_text.label(class="block text-sm font-medium text-gray-700 mb-2") }}
+                            {{ review_form.comment_text(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500") }}
+                            <div class="mt-1 text-xs text-gray-500">
+                                最多 500 個字元
+                            </div>
+                        </div>
+
+                        <!-- 提交按鈕 -->
+                        <button type="submit" 
+                                class="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            {% if user_review %}更新評論{% else %}發表評論{% endif %}
+                        </button>
+
+                        <!-- 刪除評論 -->
+                        {% if user_review %}
+                        <form method="POST" action="{{ url_for('main.delete_review', review_id=user_review.review_id) }}" class="mt-2">
+                            <button type="submit" 
+                                    onclick="return confirm('確定要刪除這則評論嗎？')"
+                                    class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                🗑️ 刪除評論
+                            </button>
+                        </form>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="lg:col-span-1">
+                <div class="bg-gray-50 rounded-lg p-6 text-center">
+                    <div class="text-4xl mb-4">✍️</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">想要評論這部電影？</h3>
+                    <p class="text-gray-600 mb-4">請先登入或註冊帳戶</p>
+                    <div class="space-y-2">
+                        <a href="{{ url_for('auth.login') }}" 
+                           class="block w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700">
+                            登入
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" 
+                           class="block w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700">
+                            註冊
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 評論列表 -->
+            <div class="lg:col-span-2">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6">💬 觀眾評論 ({{ total_reviews }})</h3>
+                
+                {% if reviews %}
+                <div class="space-y-6">
+                    {% for review in reviews %}
+                    <div class="border-b border-gray-200 pb-6 last:border-b-0">
+                        <!-- 評論標題 -->
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <a href="{{ url_for('main.user_profile', user_id=review.user.user_id) }}" 
+                                   class="font-medium text-gray-900 hover:text-primary-600">
+                                    {{ review.user.display_name }}
+                                </a>
+                                <div class="flex text-yellow-400">
+                                    {% for i in range(1, 6) %}
+                                    <span class="{% if i <= review.rating %}text-yellow-400{% else %}text-gray-300{% endif %}">★</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                {{ review.created_at.strftime('%Y年%m月%d日') }}
+                                {% if review.updated_at != review.created_at %}
+                                <span class="ml-1">(已編輯)</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- 評論內容 -->
+                        {% if review.comment_text %}
+                        <p class="text-gray-700 leading-relaxed">{{ review.comment_text }}</p>
+                        {% else %}
+                        <p class="text-gray-500 italic">使用者僅給予評分，未留下評論。</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- 評論分頁 -->
+                {% if pagination.pages > 1 %}
+                <nav class="flex items-center justify-center space-x-2 mt-8">
+                    {% if pagination.has_prev %}
+                    <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id, page=pagination.prev_num) }}" 
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        ← 上一頁
+                    </a>
+                    {% endif %}
+
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id, page=page_num) }}" 
+                               class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                {{ page_num }}
+                            </a>
+                            {% else %}
+                            <span class="px-3 py-2 text-sm font-medium text-white bg-primary-600 border border-primary-600 rounded-md">
+                                {{ page_num }}
+                            </span>
+                            {% endif %}
+                        {% else %}
+                        <span class="px-3 py-2 text-sm font-medium text-gray-500">…</span>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id, page=pagination.next_num) }}" 
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        下一頁 →
+                    </a>
+                    {% endif %}
+                </nav>
+                {% endif %}
+
+                {% else %}
+                <!-- 無評論狀態 -->
+                <div class="text-center py-12">
+                    <div class="text-4xl mb-4">💬</div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">還沒有評論</h4>
+                    <p class="text-gray-500">成為第一個評論這部電影的人！</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 初始化評分 (如果用戶已有評論)
+    {% if user_review %}
+    setRating({{ user_review.rating }});
+    {% endif %}
+</script>
+{% endblock %}

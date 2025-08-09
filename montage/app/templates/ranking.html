@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- 頁面標題 -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">🏆 電影排行榜</h1>
+        <p class="mt-2 text-gray-600">{{ title }}</p>
+    </div>
+
+    <!-- 分類選單 -->
+    <div class="mb-8">
+        <nav class="flex space-x-4">
+            <a href="{{ url_for('main.ranking', tab='popular') }}" 
+               class="px-4 py-2 rounded-md text-sm font-medium transition-colors
+                      {% if tab == 'popular' %}bg-primary-600 text-white{% else %}text-gray-500 hover:text-gray-700 bg-gray-100{% endif %}">
+                🔥 熱門電影
+            </a>
+            <a href="{{ url_for('main.ranking', tab='top_rated') }}" 
+               class="px-4 py-2 rounded-md text-sm font-medium transition-colors
+                      {% if tab == 'top_rated' %}bg-primary-600 text-white{% else %}text-gray-500 hover:text-gray-700 bg-gray-100{% endif %}">
+                ⭐ 高分電影
+            </a>
+            <a href="{{ url_for('main.ranking', tab='recent') }}" 
+               class="px-4 py-2 rounded-md text-sm font-medium transition-colors
+                      {% if tab == 'recent' %}bg-primary-600 text-white{% else %}text-gray-500 hover:text-gray-700 bg-gray-100{% endif %}">
+                🆕 最新電影
+            </a>
+        </nav>
+    </div>
+
+    <!-- 電影排行榜 -->
+    {% if movies %}
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        {% for movie in movies %}
+        <div class="{% if not loop.last %}border-b border-gray-200{% endif %} p-6 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center space-x-6">
+                <!-- 排名 -->
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                        <span class="text-lg font-bold text-primary-600">{{ loop.index }}</span>
+                    </div>
+                </div>
+
+                <!-- 電影海報 -->
+                <div class="flex-shrink-0">
+                    <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id) }}">
+                        <div class="w-16 h-24 bg-gray-200 rounded overflow-hidden">
+                            {% if movie.poster_url %}
+                            <img src="{{ movie.poster_url }}" 
+                                 alt="{{ movie.title }}" 
+                                 class="w-full h-full object-cover">
+                            {% else %}
+                            <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+                                <span class="text-gray-500 text-xl">🎬</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </a>
+                </div>
+
+                <!-- 電影資訊 -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 mr-4">
+                            <a href="{{ url_for('main.movie_detail', movie_id=movie.movie_id) }}" 
+                               class="text-lg font-semibold text-gray-900 hover:text-primary-600 transition-colors">
+                                {{ movie.title }}
+                            </a>
+                            
+                            <div class="flex items-center mt-1 space-x-4">
+                                {% if movie.release_year %}
+                                <span class="text-sm text-gray-500">{{ movie.release_year }}</span>
+                                {% endif %}
+                                
+                                {% if movie.runtime %}
+                                <span class="text-sm text-gray-500">{{ movie.runtime }} 分鐘</span>
+                                {% endif %}
+                            </div>
+
+                            {% if movie.overview %}
+                            <p class="mt-2 text-sm text-gray-600 line-clamp-2">{{ movie.overview }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- 統計資訊 -->
+                        <div class="flex-shrink-0 text-right">
+                            <div class="flex items-center justify-end mb-2">
+                                <div class="flex text-yellow-400 mr-2">
+                                    {% for i in range(1, 6) %}
+                                    <span class="{% if i <= movie.avg_rating %}text-yellow-400{% else %}text-gray-300{% endif %}">★</span>
+                                    {% endfor %}
+                                </div>
+                                <span class="text-lg font-semibold text-gray-900">
+                                    {{ "%.1f"|format(movie.avg_rating) if movie.avg_rating > 0 else "N/A" }}
+                                </span>
+                            </div>
+                            
+                            <div class="text-sm text-gray-500">
+                                {{ movie.get_review_count() }} 則評論
+                            </div>
+
+                            {% if tab == 'popular' %}
+                            <div class="mt-1">
+                                <span class="inline-block px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                                    🔥 熱門
+                                </span>
+                            </div>
+                            {% elif tab == 'top_rated' and movie.avg_rating >= 4.0 %}
+                            <div class="mt-1">
+                                <span class="inline-block px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                                    ⭐ 高分
+                                </span>
+                            </div>
+                            {% elif tab == 'recent' %}
+                            <div class="mt-1">
+                                <span class="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                                    🆕 最新
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 排行榜說明 -->
+    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex">
+            <svg class="flex-shrink-0 h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">排行榜說明</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    {% if tab == 'popular' %}
+                    <p>熱門電影排行榜依據評論數量排序，評論越多排名越前。</p>
+                    {% elif tab == 'top_rated' %}
+                    <p>高分電影排行榜依據平均評分排序，需至少有5則評論才會列入排名。</p>
+                    {% else %}
+                    <p>最新電影排行榜依據上映年份排序，展示最近上映的電影。</p>
+                    {% endif %}
+                    <p class="mt-1">排行榜每日凌晨2點自動更新。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- 空狀態 -->
+    <div class="text-center py-12">
+        <div class="text-6xl mb-4">🏆</div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">暫無排行榜資料</h3>
+        <p class="text-gray-500 mb-6">還沒有足夠的電影和評論來產生排行榜</p>
+        <div class="space-x-4">
+            <a href="{{ url_for('main.movies') }}" 
+               class="inline-block px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
+                瀏覽電影
+            </a>
+            <a href="{{ url_for('main.index') }}" 
+               class="inline-block px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+                返回首頁
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
